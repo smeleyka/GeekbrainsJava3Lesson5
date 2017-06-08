@@ -4,11 +4,13 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Car implements Runnable {
     private static int CARS_COUNT;
     private static AtomicBoolean gotWinner = new AtomicBoolean(false);
     private Object mon;
+    private ReentrantLock lock;
 
 
     static {
@@ -27,7 +29,8 @@ public class Car implements Runnable {
         return speed;
     }
 
-    public Car(Race race, int speed, Object mon) {
+    public Car(Race race, int speed, Object mon, ReentrantLock lock) {
+        this.lock= lock;
         this.mon = mon;
         this.race = race;
         this.speed = speed;
@@ -43,14 +46,16 @@ public class Car implements Runnable {
 
             Thread.sleep(500 + (int) (Math.random() * 800));
             System.out.println(this.name + " готов");
+            //System.out.println("После ЛОк");
 
-
+            lock.lock();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        synchronized (mon) {
+        synchronized (lock) {
             try {
-                mon.wait();
+                lock.wait();
+                //mon.wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
