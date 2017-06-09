@@ -1,16 +1,11 @@
-import com.sun.org.apache.xpath.internal.SourceTree;
 
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class Car implements Runnable {
     private static int CARS_COUNT;
     private static AtomicBoolean gotWinner = new AtomicBoolean(false);
-    private Object mon;
-    private ReentrantLock lock;
+    public static CountDownLatch countDown;
 
 
     static {
@@ -29,9 +24,8 @@ public class Car implements Runnable {
         return speed;
     }
 
-    public Car(Race race, int speed, Object mon, ReentrantLock lock) {
-        this.lock= lock;
-        this.mon = mon;
+    public Car(Race race, int speed, CountDownLatch countDown) {
+        this.countDown = countDown;
         this.race = race;
         this.speed = speed;
         CARS_COUNT++;
@@ -46,42 +40,31 @@ public class Car implements Runnable {
 
             Thread.sleep(500 + (int) (Math.random() * 800));
             System.out.println(this.name + " готов");
-            //System.out.println("После ЛОк");
+            countDown.countDown();
 
-            lock.lock();
-        } catch (Exception e) {
+            synchronized (countDown) {
+                countDown.wait();
+            }
+
+            for (int i = 0; i < race.getStages().size(); i++) {
+                race.getStages().get(i).go(this);
+            }
+
+            if (!gotWinner.get()) {
+                gotWinner.set(true);
+                System.out.println(this.name + " WINS");
+            }
+
+
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        synchronized (lock) {
-            try {
-                lock.wait();
-                //mon.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        for (int i = 0; i < race.getStages().size(); i++) {
-            race.getStages().get(i).go(this);
-        }
-
-        if (!gotWinner.get()) {
-            gotWinner.set(true);
-            System.out.println(this.name + " WINS");
-        }
-
     }
 
-//    public static int getBarier() throws BrokenBarrierException, InterruptedException {
-//        //return barier.await();
-//    }
-
-//    public static void setBarier(CyclicBarrier barier) {
-//        Car.barier = barier;
-//    }
-
     public static void startCars() {
-        //mon.notify();
+        synchronized (countDown) {
+            countDown.notifyAll();
+        }
     }
 }
 
