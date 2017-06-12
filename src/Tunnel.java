@@ -3,7 +3,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.SerializerMessages_sv;
 import java.util.concurrent.Semaphore;
 
 public class Tunnel extends Stage {
-    private static Semaphore carsLimit = new Semaphore(4);
+    private static Semaphore carsLimit = new Semaphore(MainClass.CARS_COUNT/2);
     public Tunnel() {
         this.length = 80;
         this.description = "Тоннель " + length + " метров";

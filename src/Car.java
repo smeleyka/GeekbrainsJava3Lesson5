@@ -50,8 +50,7 @@ public class Car implements Runnable {
                 race.getStages().get(i).go(this);
             }
 
-            if (!gotWinner.get()) {
-                gotWinner.set(true);
+            if (gotWinner.compareAndSet(false,true)) {
                 System.out.println(this.name + " WINS");
             }
 
